@@ -14,8 +14,8 @@ static std::unordered_map<ShaderFeatureBits, std::string> g_define_map{
     {ShaderFeature_Lighting, "USE_LIGHTING"},
 };
 
-static uint64_t makeShaderKey(ShaderType type, ShaderFeatureBits features) {
-    return (static_cast<uint64_t>(type) << 32) | features;
+static std::uint64_t makeShaderKey(ShaderType type, ShaderFeatureBits features) {
+    return (static_cast<std::uint64_t>(type) << 32) | features;
 }
 
 void ShaderManager::init() {
@@ -43,7 +43,7 @@ Shader& ShaderManager::get(ShaderType type, ShaderFeatureBits features) {
     auto key = makeShaderKey(type, features);
 
     if (!m_shader_map.contains(key)) {
-        m_shader_map[key] = compile(type, features);
+        compile(type, features);
     }
     return m_shader_map.at(key);
 }
@@ -67,7 +67,7 @@ static std::string loadShaderFile(const std::string& path,
     return buffer.str();
 }
 
-Shader ShaderManager::compile(ShaderType type, ShaderFeatureBits features) {
+void ShaderManager::compile(ShaderType type, ShaderFeatureBits features) {
     std::vector<std::string> defines;
 
     for (auto& [feature, define] : g_define_map) {
@@ -132,7 +132,7 @@ Shader ShaderManager::compile(ShaderType type, ShaderFeatureBits features) {
         throw std::runtime_error(std::format("Failed to link program: {}", info_log));
     }
 
-    return {program};
+    m_shader_map.try_emplace(makeShaderKey(type, features), Shader(program));
 }
 
 GLAB_NAMESPACE_END()
