@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <tracy/Tracy.hpp>
 
 #include "core/geometry_helper.h"
 #include "core/material.h"
@@ -42,12 +43,17 @@ Editor::~Editor() {
 }
 
 void Editor::render() {
+    FrameMark;
+
     auto renderer = g_editor_context.renderer;
     auto scene = g_editor_context.scene;
     auto render_items = scene->collectRenderItems();
-    renderer->setClearColor(scene->clear_color);
-    renderer->render(render_items);
-    ResourceManager::instance().flushDestroyQueue();
+    {
+        ZoneScopedN("Render");
+        renderer->setClearColor(scene->clear_color);
+        renderer->render(render_items);
+        ResourceManager::instance().flushDestroyQueue();
+    }
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGuiID dockspace = ImGui::GetID("DockSpace");
