@@ -7,16 +7,13 @@
 #include <vector>
 
 #include "../logger.h"
+#include "shader.h"
 
 GLAB_NAMESPACE_BEGIN()
 
 static std::unordered_map<ShaderFeatureBits, std::string> g_define_map{
     {ShaderFeature_Lighting, "USE_LIGHTING"},
 };
-
-static std::uint64_t makeShaderKey(ShaderType type, ShaderFeatureBits features) {
-    return (static_cast<std::uint64_t>(type) << 32) | features;
-}
 
 void ShaderManager::init() {
     static bool initialized{false};
@@ -25,13 +22,13 @@ void ShaderManager::init() {
 
     LOG_INFO("Build shaders");
 
-    get(ShaderType::Bundle, ShaderFeature_Lighting);
-    get(ShaderType::Wireframe, ShaderFeature_None);
+    get(Shader::key(ShaderType::Bundle, ShaderFeature_Lighting));
+    get(Shader::key(ShaderType::Wireframe, ShaderFeature_None));
 
     initialized = true;
 }
 
-ShaderManager::~ShaderManager() {
+void ShaderManager::destroy() {
     LOG_INFO("Destroy all shaders");
     for (auto& [_, shader] : m_shader_map) {
         shader.destroy();
@@ -39,8 +36,9 @@ ShaderManager::~ShaderManager() {
     m_shader_map.clear();
 }
 
-Shader& ShaderManager::get(ShaderType type, ShaderFeatureBits features) {
-    auto key = makeShaderKey(type, features);
+Shader& ShaderManager::get(std::uint64_t key) {
+    ShaderType type{(std::uint32_t)(key >> 32)};
+    ShaderFeatureBits features{(std::uint32_t)key};
 
     if (!m_shader_map.contains(key)) {
         compile(type, features);
@@ -132,7 +130,7 @@ void ShaderManager::compile(ShaderType type, ShaderFeatureBits features) {
         throw std::runtime_error(std::format("Failed to link program: {}", info_log));
     }
 
-    m_shader_map.try_emplace(makeShaderKey(type, features), Shader(program));
+    m_shader_map.try_emplace(Shader::key(type, features), Shader(program));
 }
 
 GLAB_NAMESPACE_END()

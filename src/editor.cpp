@@ -13,6 +13,7 @@
 #include "core/resource_manager.h"
 #include "core/scene.h"
 #include "core/shader_manager.h"
+#include "core/ubo_pool.h"
 #include "editor_context.h"
 
 GLAB_NAMESPACE_BEGIN()
@@ -23,6 +24,7 @@ EditorContext& EditorContext::instance() noexcept { return g_editor_context; }
 
 Editor::Editor(GLFWwindow* window) {
     ShaderManager::instance().init();
+    UBOPool::instance().init();
 
     auto renderer = new Renderer();
     auto scene = new Scene();
@@ -38,6 +40,8 @@ Editor::Editor(GLFWwindow* window) {
 }
 
 Editor::~Editor() {
+    ShaderManager::instance().destroy();
+    UBOPool::instance().destroy();
     delete g_editor_context.renderer;
     delete g_editor_context.scene;
 }

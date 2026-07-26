@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "shader.h"
 
 GLAB_NAMESPACE_BEGIN()
@@ -11,10 +13,9 @@ public:
         return singleton;
     }
 
-    ~ShaderManager();
-
     void init();
-    Shader& get(ShaderType type, ShaderFeatureBits features);
+    void destroy();
+    Shader& get(std::uint64_t key);
 
 private:
     void compile(ShaderType type, ShaderFeatureBits features);
