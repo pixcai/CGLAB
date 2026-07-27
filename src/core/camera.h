@@ -19,8 +19,11 @@ struct Camera : IComponent {
     glm::mat4 projection_matrix{1.0f};
     glm::mat4 view_projection_matrix{1.0f};
 
-    float near{0.1f};
-    float far{1000.0f};
+    glm::vec3 target{0.0f, 0.0f, 0.0f};
+    float yaw{0.0f}, pitch{0.0f};
+
+    float near_plane{0.1f};
+    float far_plane{1000.0f};
 
     // Perspective camera fields
     float fovy{45.0f};
@@ -41,7 +44,7 @@ struct Camera : IComponent {
             projection_matrix = glm::ortho(left, right, bottom, top);
         } else {
             projection_matrix =
-                glm::perspective(glm::radians(fovy), (float)width / height, near, far);
+                glm::perspective(glm::radians(fovy), (float)width / height, near_plane, far_plane);
         }
         view_projection_matrix = projection_matrix * view_matrix;
     }

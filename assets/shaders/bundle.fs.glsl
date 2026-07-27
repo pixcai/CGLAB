@@ -1,7 +1,9 @@
 out vec4 out_color;
 
 struct MaterialData {
-    vec4 albedo;
+    vec4 base_color;
+    float metallic;
+    float roughness;
 };
 
 layout(std140) uniform Material {
@@ -9,5 +11,5 @@ layout(std140) uniform Material {
 };
 
 void main() {
-    out_color = materials[0].albedo;
+    out_color = materials[0].base_color;
 }

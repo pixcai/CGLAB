@@ -15,7 +15,9 @@ Material::Material(MaterialType type)
 
     UBOPool::instance().initUBO(UBOBinding::Material, shader_block->size * kMaterialLimits);
 
-    set("albedo", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    set("base_color", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    set("metallic", 0.0f);
+    set("roughness", 0.5f);
 }
 
 GLAB_NAMESPACE_END()

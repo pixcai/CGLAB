@@ -1,5 +1,6 @@
 #include "editor.h"
 
+#include <cmath>
 #include <cstdio>
 
 #include <imgui.h>
@@ -27,8 +28,6 @@ EditorContext& EditorContext::instance() noexcept { return g_editor_context; }
 static Camera g_camera;
 static Transform g_transform;
 
-static float yaw, pitch;
-
 static Material* cube_material;
 static glm::vec4 cube_color;
 
@@ -50,11 +49,15 @@ Editor::Editor(GLFWwindow* window) {
     g_editor_context.scene = scene;
 
     g_transform.position = glm::vec3(0.0f, 2.0f, 4.0f);
-    g_transform.lookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+    g_transform.lookAt(g_camera.target);
     g_transform.updateLocalMatrix();
 
+    auto offset = g_transform.position - g_camera.target;
+    g_camera.yaw = std::atan2(offset.x, offset.z);
+    g_camera.pitch = std::asin(offset.y / glm::length(offset));
     g_camera.updateViewMatrix(g_transform.local_matrix);
-    cube_color = cube_material->get<glm::vec4>("albedo");
+
+    cube_color = cube_material->get<glm::vec4>("base_color");
 }
 
 Editor::~Editor() {
@@ -97,7 +100,8 @@ void Editor::render() {
     renderStatusBar();
 
     renderWorkspace();
-    renderInspector();
+    renderOutliner();
+    renderProperties();
 
     static bool initialized{false};
 
@@ -144,15 +148,16 @@ void Editor::renderStatusBar() {
 
 void Editor::initLayout() {
     ImGuiID dockspace = ImGui::GetID("DockSpace");
-    ImGuiID workspace, inspector;
+    ImGuiID workspace, right;
 
     ImGui::DockBuilderRemoveNode(dockspace);
     ImGui::DockBuilderAddNode(dockspace, ImGuiDockNodeFlags_DockSpace);
     ImGui::DockBuilderSetNodeSize(dockspace, ImGui::GetMainViewport()->Size);
 
-    ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Left, 0.75f, &workspace, &inspector);
+    ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Left, 0.75f, &workspace, &right);
     ImGui::DockBuilderDockWindow("Workspace", workspace);
-    ImGui::DockBuilderDockWindow("Inspector", inspector);
+    ImGui::DockBuilderDockWindow("Outliner", right);
+    ImGui::DockBuilderDockWindow("Properties", right);
     ImGui::DockBuilderFinish(dockspace);
 }
 
@@ -164,13 +169,40 @@ void Editor::renderWorkspace() {
     ImGui::Begin("Workspace", nullptr, ImGuiWindowFlags_MenuBar);
 
     if (ImGui::IsWindowHovered()) {
+#if defined(__APPLE__)
         if (io.MouseWheelH != 0.0f || io.MouseWheel != 0.0f) {
-            yaw += io.MouseWheelH * 0.01f;
-            pitch += io.MouseWheel * 0.01f;
-            g_transform.rotation = glm::quat(glm::vec3(pitch, yaw, 0.0f));
+            glm::vec3 offset;
+            float distance = glm::distance(g_transform.position, g_camera.target);
+            g_camera.yaw -= io.MouseWheelH * 0.01f;
+            g_camera.pitch += io.MouseWheel * 0.01f;
+            offset.x = distance * std::cos(g_camera.pitch) * std::sin(g_camera.yaw);
+            offset.y = distance * std::sin(g_camera.pitch);
+            offset.z = distance * std::cos(g_camera.pitch) * std::cos(g_camera.yaw);
+            g_transform.position = g_camera.target + offset;
+            g_transform.lookAt(g_camera.target);
             g_transform.updateLocalMatrix();
             g_camera.updateViewMatrix(g_transform.local_matrix);
         }
+#else
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
+            glm::vec3 offset;
+            float distance = glm::distance(g_transform.position, g_camera.target);
+            g_camera.yaw -= io.MouseDelta.x * 0.005f;
+            g_camera.pitch += io.MouseDelta.y * 0.005f;
+            offset.x = distance * std::cos(g_camera.pitch) * std::sin(g_camera.yaw);
+            offset.y = distance * std::sin(g_camera.pitch);
+            offset.z = distance * std::cos(g_camera.pitch) * std::cos(g_camera.yaw);
+            g_transform.position = g_camera.target + offset;
+            g_transform.lookAt(g_camera.target);
+            g_transform.updateLocalMatrix();
+            g_camera.updateViewMatrix(g_transform.local_matrix);
+        }
+        if (io.MouseWheel != 0.0f) {
+            g_transform.position += g_transform.forward() * io.MouseWheel * 0.5f;
+            g_transform.updateLocalMatrix();
+            g_camera.updateViewMatrix(g_transform.local_matrix);
+        }
+#endif
     }
 
     ImGui::BeginMenuBar();
@@ -185,14 +217,21 @@ void Editor::renderWorkspace() {
     ImGui::PopStyleVar();
 }
 
-void Editor::renderInspector() {
+void Editor::renderOutliner() {
+    ImGui::Begin("Outliner");
+    ImGui::End();
+}
+
+void Editor::renderProperties() {
     auto scene = g_editor_context.scene;
 
-    ImGui::Begin("Inspector");
-    ImGui::ColorEdit4("Scene color", glm::value_ptr(scene->clear_color));
-    if (ImGui::ColorEdit4("Cube color", glm::value_ptr(cube_color))) {
-        cube_material->set("albedo", cube_color);
-        UBOPool::instance().updateMaterial(*cube_material);
+    ImGui::Begin("Properties");
+    if (ImGui::CollapsingHeader("Material")) {
+        ImGui::ColorEdit4("Scene color", glm::value_ptr(scene->clear_color));
+        if (ImGui::ColorEdit4("Cube color", glm::value_ptr(cube_color))) {
+            cube_material->set("base_color", cube_color);
+            UBOPool::instance().updateMaterial(*cube_material);
+        }
     }
     ImGui::End();
 }

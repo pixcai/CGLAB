@@ -16,6 +16,8 @@ struct Transform : IComponent {
     glm::mat4 local_matrix{1.0f};
     glm::mat4 world_matrix{1.0f};
 
+    glm::vec3 forward() const noexcept { return rotation * glm::vec3(0.0f, 0.0f, -1.0f); }
+
     void lookAt(glm::vec3 target, glm::vec3 up = {0.0f, 1.0f, 0.0f}) {
         auto direction = glm::normalize(target - position);
         rotation = glm::quatLookAt(direction, up);

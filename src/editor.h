@@ -18,7 +18,8 @@ private:
     void renderStatusBar();
     void initLayout();
     void renderWorkspace();
-    void renderInspector();
+    void renderOutliner();
+    void renderProperties();
 };
 
 GLAB_NAMESPACE_END()
