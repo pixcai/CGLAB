@@ -5,7 +5,7 @@
 GLAB_NAMESPACE_BEGIN()
 
 struct GeometryHelper {
-    static ResourceHandle<Mesh> buildCube(float size = 1.0f);
+    static ResourceHandle<Mesh> buildCube(float size = 2.0f);
 };
 
 GLAB_NAMESPACE_END()

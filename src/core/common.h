@@ -25,6 +25,8 @@ struct Entity {
 struct IComponent {
     IComponent() = default;
     virtual ~IComponent() = default;
+    virtual void init() {}
+    virtual void destroy() {}
 };
 
 template <typename T>

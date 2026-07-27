@@ -15,14 +15,14 @@ constexpr RenderQueueType RenderQueue_Transparent = 64;
 
 struct RenderItem {
     RenderQueueType render_queue{RenderQueue_Opaque};
-    glm::mat4 world_matrix{1.0f};
+    glm::mat4 model_matrix{1.0f};
     ResourceHandle<Mesh> mesh_handle;
     ResourceHandle<Material> material_handle;
 };
 
 struct DrawCommand {
     RenderQueueType render_queue{RenderQueue_Opaque};
-    glm::mat4 world_matrix{1.0f};
+    glm::mat4 model_matrix{1.0f};
     ResourceHandle<Mesh> mesh_handle;
     ResourceHandle<Material> material_handle;
 };

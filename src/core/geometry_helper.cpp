@@ -9,25 +9,74 @@ ResourceHandle<Mesh> GeometryHelper::buildCube(float size) {
     auto cube = ResourceManager::instance().make<Mesh>();
     float half_size = size * 0.5f;
 
-    cube->vertices.push_back({{half_size, half_size, half_size}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+    // front
+    cube->vertices.push_back({{half_size, half_size, half_size}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}});
     cube->vertices.push_back(
-        {{-half_size, half_size, half_size}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+        {{-half_size, half_size, half_size}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}});
     cube->vertices.push_back(
-        {{-half_size, -half_size, half_size}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+        {{-half_size, -half_size, half_size}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}});
     cube->vertices.push_back(
-        {{half_size, -half_size, half_size}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+        {{half_size, -half_size, half_size}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}});
+    // back
     cube->vertices.push_back(
-        {{half_size, half_size, -half_size}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+        {{half_size, half_size, -half_size}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}});
     cube->vertices.push_back(
-        {{-half_size, half_size, -half_size}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+        {{-half_size, half_size, -half_size}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}});
     cube->vertices.push_back(
-        {{-half_size, -half_size, -half_size}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+        {{-half_size, -half_size, -half_size}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}});
     cube->vertices.push_back(
-        {{half_size, -half_size, -half_size}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+        {{half_size, -half_size, -half_size}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}});
+    // top
+    cube->vertices.push_back(
+        {{half_size, half_size, -half_size}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{-half_size, half_size, -half_size}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{-half_size, half_size, half_size}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back({{half_size, half_size, half_size}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}});
+    // bottom
+    cube->vertices.push_back(
+        {{half_size, -half_size, -half_size}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{-half_size, -half_size, -half_size}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{-half_size, -half_size, half_size}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{half_size, -half_size, half_size}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}});
+    // left
+    cube->vertices.push_back(
+        {{-half_size, half_size, -half_size}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{-half_size, half_size, half_size}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{-half_size, -half_size, half_size}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{-half_size, -half_size, -half_size}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+    // right
+    cube->vertices.push_back(
+        {{half_size, half_size, -half_size}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back({{half_size, half_size, half_size}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{half_size, -half_size, half_size}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
+    cube->vertices.push_back(
+        {{half_size, -half_size, -half_size}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}});
 
-    cube->indices.insert(cube->indices.end(),
-                         {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 4, 5, 1, 1, 0, 4,
-                          7, 6, 2, 2, 3, 7, 4, 0, 3, 3, 7, 4, 5, 1, 2, 2, 6, 5});
+    // clang-format off
+    cube->indices.insert(cube->indices.end(), {
+                         // front
+                         0, 1, 2, 2, 3, 0,
+                         // back
+                         4, 5, 6, 6, 7, 4,
+                         // top
+                         8, 9, 10, 10, 11, 8,
+                         // bottom
+                         12, 13, 14, 14, 15, 12,
+                         // left
+                         16, 17, 18, 18, 19, 16,
+                         // right
+                         20, 21, 22, 22, 23, 20,
+                     });
+    // clang-format on
 
     glBindVertexArray(cube->vao);
 

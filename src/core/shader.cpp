@@ -44,8 +44,10 @@ static std::string stripBlockName(const std::string& name) {
 
 static std::unordered_map<std::string, UBOBinding> g_block_bindings{
     {"Frame", UBOBinding::Frame},
+    {"Object", UBOBinding::Object},
     {"Camera", UBOBinding::Camera},
-    {"Material", UBOBinding::Material}};
+    {"Material", UBOBinding::Material},
+    {"Light", UBOBinding::Light}};
 
 void Shader::reflect() {
     GLint uniform_count;

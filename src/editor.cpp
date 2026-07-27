@@ -17,6 +17,7 @@
 #include "core/shader_manager.h"
 #include "core/transform.h"
 #include "core/ubo_pool.h"
+#include "core/light.h"
 #include "editor_context.h"
 
 GLAB_NAMESPACE_BEGIN()
@@ -28,8 +29,13 @@ EditorContext& EditorContext::instance() noexcept { return g_editor_context; }
 static Camera g_camera;
 static Transform g_transform;
 
+static Light g_light;
+static glm::vec4 light_color;
+static glm::vec4 light_direction;
+
 static Material* cube_material;
 static glm::vec4 cube_color;
+static float metallic, roughness;
 
 Editor::Editor(GLFWwindow* window) {
     ShaderManager::instance().init();
@@ -38,6 +44,9 @@ Editor::Editor(GLFWwindow* window) {
     auto renderer = new Renderer();
     auto scene = new Scene();
 
+    g_editor_context.renderer = renderer;
+    g_editor_context.scene = scene;
+
     auto object = scene->createObject();
     auto mesh_renderer = object.add<MeshRenderer>();
     mesh_renderer->mesh_handle = GeometryHelper::buildCube();
@@ -45,10 +54,9 @@ Editor::Editor(GLFWwindow* window) {
     cube_material = mesh_renderer->material_handle.get();
     scene->addObject(object);
 
-    g_editor_context.renderer = renderer;
-    g_editor_context.scene = scene;
+    g_light.init();
 
-    g_transform.position = glm::vec3(0.0f, 2.0f, 4.0f);
+    g_transform.position = glm::vec3(4.0f, 8.0f, 8.0f);
     g_transform.lookAt(g_camera.target);
     g_transform.updateLocalMatrix();
 
@@ -58,6 +66,11 @@ Editor::Editor(GLFWwindow* window) {
     g_camera.updateViewMatrix(g_transform.local_matrix);
 
     cube_color = cube_material->get<glm::vec4>("base_color");
+    metallic = cube_material->get<float>("metallic");
+    roughness = cube_material->get<float>("roughness");
+
+    light_color = g_light.get<glm::vec4>("color");
+    light_direction = g_light.get<glm::vec4>("direction");
 }
 
 Editor::~Editor() {
@@ -75,8 +88,9 @@ void Editor::render() {
     auto render_items = scene->collectRenderItems();
     {
         ZoneScopedN("Render");
+        UBOPool::instance().updateLight(g_light);
         renderer->setClearColor(scene->clear_color);
-        renderer->render(render_items, g_camera);
+        renderer->render(render_items, g_camera, g_transform);
         ResourceManager::instance().flushDestroyQueue();
     }
 
@@ -231,6 +245,25 @@ void Editor::renderProperties() {
         if (ImGui::ColorEdit4("Cube color", glm::value_ptr(cube_color))) {
             cube_material->set("base_color", cube_color);
             UBOPool::instance().updateMaterial(*cube_material);
+        }
+        if (ImGui::DragFloat("Metallic", &metallic, 0.01f, 0.0f, 1.0f)) {
+            cube_material->set("metallic", metallic);
+            UBOPool::instance().updateMaterial(*cube_material);
+        }
+        if (ImGui::DragFloat("Roughness", &roughness, 0.01f, 0.0f, 1.0f)) {
+            cube_material->set("roughness", roughness);
+            UBOPool::instance().updateMaterial(*cube_material);
+        }
+    }
+    if (ImGui::CollapsingHeader("Light")) {
+        if (ImGui::ColorEdit4("Light color", glm::value_ptr(light_color))) {
+            g_light.set("color", light_color);
+            UBOPool::instance().updateLight(g_light);
+        }
+        if (ImGui::DragFloat4("Light direction", glm::value_ptr(light_direction), 0.01f, 0.0f,
+                              1.0f)) {
+            g_light.set("direction", light_direction);
+            UBOPool::instance().updateLight(g_light);
         }
     }
     ImGui::End();

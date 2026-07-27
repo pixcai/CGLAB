@@ -4,10 +4,11 @@
 
 #include <glm/glm.hpp>
 
+#include "camera.h"
 #include "framebuffer.h"
 #include "rendering.h"
+#include "transform.h"
 #include "ubo_pool.h"
-#include "camera.h"
 
 GLAB_NAMESPACE_BEGIN()
 
@@ -18,7 +19,8 @@ public:
 
     void resize(int width, int height);
 
-    void render(const std::vector<RenderItem>& render_items, Camera& camera);
+    void render(const std::vector<RenderItem>& render_items, Camera& camera,
+                const Transform& transform);
 
     void setClearColor(glm::vec4 clear_color);
     GLuint texture() const noexcept;
@@ -35,6 +37,7 @@ private:
 private:
     glm::vec4 m_clear_color{0.0f, 0.0f, 0.0f, 1.0f};
     UniformFrame m_uniform_frame{};
+    UniformObject m_uniform_object{};
     UniformCamera m_uniform_camera{};
     Framebuffer m_framebuffer{};
     std::vector<DrawCommand> m_opaque_queue;

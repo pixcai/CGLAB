@@ -1,9 +1,7 @@
 #include "renderer.h"
 
 #include "../gl.h"
-#include "../logger.h"
 #include "shader_manager.h"
-#include "ubo_pool.h"
 
 GLAB_NAMESPACE_BEGIN()
 
@@ -26,16 +24,19 @@ void Renderer::endFrame() {
     m_framebuffer.resolve();
 }
 
-void Renderer::render(const std::vector<RenderItem>& render_items, Camera& camera) {
+void Renderer::render(const std::vector<RenderItem>& render_items, Camera& camera,
+                      const Transform& transform) {
     if (!(camera.width == m_framebuffer.width() && camera.height == m_framebuffer.height())) {
         camera.width = m_framebuffer.width();
         camera.height = m_framebuffer.height();
         camera.updateProjectionMatrix();
     }
+    m_uniform_camera.position = glm::vec4(transform.position, 1.0f);
     m_uniform_camera.view_projection_matrix = camera.view_projection_matrix;
     UBOPool::instance().updateFrame(m_uniform_frame);
     UBOPool::instance().updateCamera(m_uniform_camera);
     buildCommandQueue(render_items);
+    glEnable(GL_DEPTH_TEST);
     beginFrame();
     executeCommands(m_opaque_queue, camera);
     executeCommands(m_transparent_queue, camera);
@@ -65,7 +66,7 @@ void Renderer::sortTransparent() {}
 DrawCommand Renderer::createCommand(const RenderItem& render_item) {
     DrawCommand command{};
     command.render_queue = render_item.render_queue;
-    command.world_matrix = render_item.world_matrix;
+    command.model_matrix = render_item.model_matrix;
     command.mesh_handle = render_item.mesh_handle;
     command.material_handle = render_item.material_handle;
     return command;
@@ -77,8 +78,10 @@ void Renderer::executeCommands(const std::vector<DrawCommand>& commands, const C
         auto material = command.material_handle.get();
         auto& shader = ShaderManager::instance().get(material->shader_key);
 
+        m_uniform_object.model_matrix = command.model_matrix;
         glBindVertexArray(mesh->vao);
         glUseProgram(shader.program());
+        UBOPool::instance().updateObject(m_uniform_object);
         UBOPool::instance().updateMaterial(*material);
         glDrawElements(GL_TRIANGLES, mesh->indices.size(), GL_UNSIGNED_INT, nullptr);
     }
