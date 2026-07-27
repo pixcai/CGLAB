@@ -1,5 +1,4 @@
 #include "shader.h"
-#include <unordered_map>
 
 #include "ubo_pool.h"
 
@@ -8,20 +7,20 @@ GLAB_NAMESPACE_BEGIN()
 Shader::Shader(GLuint program) : m_program(program) {
     reflect();
 
-    for (auto& block : m_blocks) {
+    for (auto& [_, block] : m_block_map) {
         glUniformBlockBinding(m_program, block.index, block.binding);
-        LOG_DEBUG("Uniform block: name={}, index={}, size={}", block.name, block.index, block.size);
-        for (auto& field : block.uniforms) {
-            LOG_DEBUG("Uniform block field: name={}, offset={}", field.basename, field.offset);
+        LOG_DEBUG("Uniform block: name={}, binding={}, index={}, size={}", block.name,
+                  block.binding, block.index, block.size);
+        for (auto& [_, field] : block.uniform_map) {
+            LOG_DEBUG("Uniform block field: name={}, basename={}, offset={}", field.name,
+                      field.basename, field.offset);
         }
     }
 }
 
 Shader::Shader(Shader&& other) noexcept {
     m_program = other.m_program;
-    m_uniforms = std::move(other.m_uniforms);
     m_uniform_map = std::move(other.m_uniform_map);
-    m_blocks = std::move(other.m_blocks);
     m_block_map = std::move(other.m_block_map);
 }
 
@@ -75,9 +74,8 @@ void Shader::reflect() {
         uniform.location = location;
         uniform.array_size = size;
 
-        m_uniforms.push_back(uniform);
-        m_uniform_map[name] = &m_uniforms.back();
-        m_uniform_map[basename] = &m_uniforms.back();
+        m_uniform_map.try_emplace(name, uniform);
+        m_uniform_map.try_emplace(basename, uniform);
     }
 
     GLint block_count;
@@ -139,14 +137,9 @@ void Shader::reflect() {
                     break;
             }
             block_field.array_size = size;
-
-            block.uniforms.push_back(block_field);
-            block.uniform_map[name] = &block.uniforms.back();
-            block.uniform_map[basename] = &block.uniforms.back();
+            block.uniform_map.try_emplace(name, std::move(block_field));
         }
-
-        m_blocks.push_back(block);
-        m_block_map[block.name] = &m_blocks.back();
+        m_block_map.try_emplace(block.name, std::move(block));
     }
 }
 
@@ -155,9 +148,7 @@ void Shader::destroy() {
         glDeleteProgram(m_program);
     }
     m_program = 0;
-    m_uniforms.clear();
     m_uniform_map.clear();
-    m_blocks.clear();
     m_block_map.clear();
 }
 

@@ -21,7 +21,8 @@ struct IResource {
     IResource(ResourceType type) : resource_type(type) {}
     virtual ~IResource() = default;
 
-    virtual void destroy() = 0;
+    virtual void init() {}
+    virtual void destroy() {}
 
 private:
     std::uint32_t m_ref_count{0};

@@ -34,8 +34,7 @@ struct ShaderBlock {
     GLuint index;
     GLint binding;
     GLint size;
-    std::vector<ShaderBlockUniform> uniforms;
-    std::unordered_map<std::string, ShaderBlockUniform*> uniform_map;
+    std::unordered_map<std::string, ShaderBlockUniform> uniform_map;
 };
 
 using ShaderFeatureBits = std::uint32_t;
@@ -69,10 +68,10 @@ public:
             return;
         }
 
-        auto uniform = m_uniform_map.at(name);
-        auto location = uniform->location;
+        auto& uniform = m_uniform_map.at(name);
+        auto location = uniform.location;
 
-        switch (uniform->type) {
+        switch (uniform.type) {
             case GL_FLOAT:
                 glUniform1f(location, std::forward<Args>(args)...);
                 break;
@@ -95,11 +94,11 @@ public:
         }
     }
 
-    const std::unordered_map<std::string, ShaderUniform*>& uniforms() const noexcept {
+    const std::unordered_map<std::string, ShaderUniform>& uniforms() const noexcept {
         return m_uniform_map;
     }
 
-    const std::unordered_map<std::string, ShaderBlock*>& blocks() const noexcept {
+    const std::unordered_map<std::string, ShaderBlock>& blocks() const noexcept {
         return m_block_map;
     }
 
@@ -113,10 +112,8 @@ private:
 
 private:
     GLuint m_program{0};
-    std::vector<ShaderUniform> m_uniforms;
-    std::unordered_map<std::string, ShaderUniform*> m_uniform_map;
-    std::vector<ShaderBlock> m_blocks;
-    std::unordered_map<std::string, ShaderBlock*> m_block_map;
+    std::unordered_map<std::string, ShaderUniform> m_uniform_map;
+    std::unordered_map<std::string, ShaderBlock> m_block_map;
 };
 
 GLAB_NAMESPACE_END()

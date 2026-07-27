@@ -2,6 +2,8 @@
 
 #include "../gl.h"
 #include "../logger.h"
+#include "shader_manager.h"
+#include "ubo_pool.h"
 
 GLAB_NAMESPACE_BEGIN()
 
@@ -24,11 +26,19 @@ void Renderer::endFrame() {
     m_framebuffer.resolve();
 }
 
-void Renderer::render(const std::vector<RenderItem>& render_items) {
+void Renderer::render(const std::vector<RenderItem>& render_items, Camera& camera) {
+    if (!(camera.width == m_framebuffer.width() && camera.height == m_framebuffer.height())) {
+        camera.width = m_framebuffer.width();
+        camera.height = m_framebuffer.height();
+        camera.updateProjectionMatrix();
+    }
+    m_uniform_camera.view_projection_matrix = camera.view_projection_matrix;
+    UBOPool::instance().updateFrame(m_uniform_frame);
+    UBOPool::instance().updateCamera(m_uniform_camera);
     buildCommandQueue(render_items);
     beginFrame();
-    executeCommands(m_opaque_queue);
-    executeCommands(m_transparent_queue);
+    executeCommands(m_opaque_queue, camera);
+    executeCommands(m_transparent_queue, camera);
     endFrame();
 }
 
@@ -61,6 +71,18 @@ DrawCommand Renderer::createCommand(const RenderItem& render_item) {
     return command;
 }
 
-void Renderer::executeCommands(const std::vector<DrawCommand>& commands) {}
+void Renderer::executeCommands(const std::vector<DrawCommand>& commands, const Camera& camera) {
+    for (auto& command : commands) {
+        auto mesh = command.mesh_handle.get();
+        auto material = command.material_handle.get();
+        auto& shader = ShaderManager::instance().get(material->shader_key);
+
+        glBindVertexArray(mesh->vao);
+        glUseProgram(shader.program());
+        UBOPool::instance().updateMaterial(*material);
+        glDrawElements(GL_TRIANGLES, mesh->indices.size(), GL_UNSIGNED_INT, nullptr);
+    }
+    glBindVertexArray(0);
+}
 
 GLAB_NAMESPACE_END()

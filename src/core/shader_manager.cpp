@@ -23,7 +23,7 @@ void ShaderManager::init() {
     LOG_INFO("Build shaders");
 
     get(Shader::key(ShaderType::Bundle, ShaderFeature_Lighting));
-    get(Shader::key(ShaderType::Wireframe, ShaderFeature_None));
+    // get(Shader::key(ShaderType::Wireframe, ShaderFeature_None));
 
     initialized = true;
 }
@@ -124,6 +124,8 @@ void ShaderManager::compile(ShaderType type, ShaderFeatureBits features) {
     glAttachShader(program, vs);
     glAttachShader(program, fs);
     glLinkProgram(program);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
         glGetProgramInfoLog(program, sizeof(info_log), nullptr, info_log);

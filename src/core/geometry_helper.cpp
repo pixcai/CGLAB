@@ -1,5 +1,6 @@
 #include "geometry_helper.h"
 
+#include "../gl.h"
 #include "resource_manager.h"
 
 GLAB_NAMESPACE_BEGIN()
@@ -28,6 +29,17 @@ ResourceHandle<Mesh> GeometryHelper::buildCube(float size) {
                          {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 4, 5, 1, 1, 0, 4,
                           7, 6, 2, 2, 3, 7, 4, 0, 3, 3, 7, 4, 5, 1, 2, 2, 6, 5});
 
+    glBindVertexArray(cube->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, cube->vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * cube->vertices.size(), cube->vertices.data(),
+                 GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube->ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * cube->indices.size(),
+                 cube->indices.data(), GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
     return cube;
 }
 

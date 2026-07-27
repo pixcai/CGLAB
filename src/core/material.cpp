@@ -5,14 +5,17 @@
 
 GLAB_NAMESPACE_BEGIN()
 
-Material::Material(MaterialType type) : IResource(ResourceType::Material) {
-    auto& shader = ShaderManager::instance().get((std::uint64_t)type);
+Material::Material(MaterialType type)
+    : IResource(ResourceType::Material), shader_key((std::uint64_t)type) {
+    auto& shader = ShaderManager::instance().get(shader_key);
 
-    m_block = shader.blocks().at("Material");
-    m_storage.reserve(m_block->size);
+    shader_block = const_cast<ShaderBlock*>(&shader.blocks().at("Material"));
+    m_storage.reserve(shader_block->size);
     m_storage.clear();
 
-    UBOPool::instance().initUBO(UBOBinding::Material, m_block->size * kMaterialLimits);
+    UBOPool::instance().initUBO(UBOBinding::Material, shader_block->size * kMaterialLimits);
+
+    set("albedo", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 }
 
 GLAB_NAMESPACE_END()

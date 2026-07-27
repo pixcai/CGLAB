@@ -15,16 +15,16 @@ enum class CameraType {
 struct Camera : IComponent {
     CameraType type{CameraType::Perspective};
 
-    float near{0.1f};
-    float far{1000.0f};
-
     glm::mat4 view_matrix{1.0f};
     glm::mat4 projection_matrix{1.0f};
     glm::mat4 view_projection_matrix{1.0f};
 
+    float near{0.1f};
+    float far{1000.0f};
+
     // Perspective camera fields
     float fovy{45.0f};
-    float aspect{16.0f / 9.0f};
+    int width{1}, height{1};
 
     // Orthographics camera fields
     float left{-1.0f}, right{1.0f}, bottom{-1.0f}, top{1.0f};
@@ -40,8 +40,10 @@ struct Camera : IComponent {
         if (type == CameraType::Orthographics) {
             projection_matrix = glm::ortho(left, right, bottom, top);
         } else {
-            projection_matrix = glm::perspective(glm::radians(fovy), aspect, near, far);
+            projection_matrix =
+                glm::perspective(glm::radians(fovy), (float)width / height, near, far);
         }
+        view_projection_matrix = projection_matrix * view_matrix;
     }
 };
 

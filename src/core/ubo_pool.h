@@ -1,7 +1,6 @@
 #pragma once
 
 #include <unordered_map>
-
 #include <glm/glm.hpp>
 
 #include "../gl.h"
@@ -21,12 +20,7 @@ struct alignas(16) UniformFrame {
 };
 
 struct alignas(16) UniformCamera {
-    glm::mat4 view_matrix;
-    glm::mat4 projection_matrix;
     glm::mat4 view_projection_matrix;
-
-    glm::vec4 position;
-    glm::vec4 viewport;
 };
 
 class UBOPool {
@@ -56,32 +50,32 @@ public:
     void updateFrame(const UniformFrame& data) {
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_map[UBOBinding::Frame]);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, kUniformFrameSize, &data);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 
     void updateCamera(const UniformCamera& data) {
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_map[UBOBinding::Camera]);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, kUniformCameraSize, &data);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 
     void updateMaterial(const Material& material) {
         if (!material.m_dirty) return;
 
+        auto size = material.shader_block->size;
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_map[UBOBinding::Material]);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, kUniformCameraSize, material.m_storage.data());
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glBufferSubData(GL_UNIFORM_BUFFER, material.index * size, size, material.m_storage.data());
+        material.m_dirty = false;
     }
 
 private:
     void initUBO(UBOBinding binding, GLint size) {
         if (m_ubo_map.contains(binding)) return;
 
-        glGenBuffers(1, &m_ubo_map[binding]);
-        glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_map[binding]);
+        GLuint ubo;
+        glGenBuffers(1, &ubo);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)binding, m_ubo_map[binding]);
+        glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)binding, ubo);
+        m_ubo_map[binding] = ubo;
     }
 
     friend class Material;

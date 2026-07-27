@@ -22,6 +22,7 @@ public:
     template <ResourceLike Resource, typename... Args>
     ResourceHandle<Resource> make(Args&&... args) {
         ResourceHandle<Resource> handle{new Resource(std::forward<Args>(args)...)};
+        handle->init();
         handle->id = m_next_id++;
         handle->name = std::format("Resource.{:03}", handle->id);
         LOG_DEBUG("Building a resource: id={}", handle->id);

@@ -1,5 +1,13 @@
 out vec4 out_color;
 
+struct MaterialData {
+    vec4 albedo;
+};
+
+layout(std140) uniform Material {
+    MaterialData materials[1];
+};
+
 void main() {
-    out_color = vec4(1.0);
+    out_color = materials[0].albedo;
 }
