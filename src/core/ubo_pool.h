@@ -42,6 +42,7 @@ public:
     static constexpr std::size_t kUniformFrameSize{sizeof(UniformFrame)};
     static constexpr std::size_t kUniformObjectSize{sizeof(UniformObject)};
     static constexpr std::size_t kUniformCameraSize{sizeof(UniformCamera)};
+    static constexpr std::size_t kUniformLightSize{sizeof(UniformLight)};
 
     void init() {
         LOG_DEBUG("UBOPool::kUniformFrameSize={}", kUniformFrameSize);
@@ -49,6 +50,7 @@ public:
         initUBO(UBOBinding::Frame, kUniformFrameSize);
         initUBO(UBOBinding::Object, kUniformObjectSize);
         initUBO(UBOBinding::Camera, kUniformCameraSize);
+        initUBO(UBOBinding::Light, kUniformLightSize);
     }
 
     void destroy() {
@@ -73,22 +75,22 @@ public:
         glBufferSubData(GL_UNIFORM_BUFFER, 0, kUniformCameraSize, &data);
     }
 
-    void updateMaterial(const Material& material) {
-        if (!material.m_dirty) return;
+    void updateMaterial(Material& material) {
+        if (!material.dirty) return;
 
         auto size = material.shader_block->size;
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_map[UBOBinding::Material]);
         glBufferSubData(GL_UNIFORM_BUFFER, material.index * size, size, material.m_storage.data());
-        material.m_dirty = false;
+        material.dirty = false;
     }
 
-    void updateLight(const Light& light) {
-        if (!light.m_dirty) return;
+    void updateLight(Light& light) {
+        if (!light.dirty) return;
 
-        auto size = light.shader_block->size;
+        auto size = kUniformLightSize;
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_map[UBOBinding::Light]);
-        glBufferSubData(GL_UNIFORM_BUFFER, light.index * size, size, light.m_storage.data());
-        light.m_dirty = false;
+        glBufferSubData(GL_UNIFORM_BUFFER, light.index * size, size, &light.property);
+        light.dirty = false;
     }
 
 private:
@@ -104,7 +106,6 @@ private:
     }
 
     friend class Material;
-    friend class Light;
 
 private:
     std::unordered_map<UBOBinding, GLuint> m_ubo_map;

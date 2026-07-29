@@ -5,23 +5,23 @@ in vec3 view_direction;
     
 out vec4 out_color;
 
-struct MaterialData {
+struct MaterialProperty {
     vec4 base_color;
     float metallic;
     float roughness;
 };
 
 layout(std140) uniform Material {
-    MaterialData materials[1];
+    MaterialProperty materials[1];
 };
 
-struct LightData {
+struct LightProperty {
     vec4 color;
     vec4 direction;
 };
 
 layout(std140) uniform Light {
-    LightData lights[1];
+    LightProperty lights[1];
 };
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -58,10 +58,10 @@ vec3 FresnelSchlick(float cos_theta, vec3 F0) {
 void main() {
     vec3 N = normalize(world_normal);
     vec3 V = normalize(view_direction);
-    vec3 L = normalize(vec3(lights[0].direction));
+    vec3 L = normalize(-vec3(lights[0].direction));
     vec3 H = normalize(V + L);
 
-    MaterialData material = materials[0];
+    MaterialProperty material = materials[0];
     vec3 albedo = vec3(material.base_color);
     float metallic = material.metallic;
     float roughness = material.roughness;

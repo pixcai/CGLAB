@@ -2,11 +2,10 @@
 
 GLAB_NAMESPACE_BEGIN()
 
-EntityObject Scene::createObject() { return EntityObject(this); }
-
 void Scene::destroyObject(std::uint32_t id) {
     if (auto object = getObject(id); object != nullptr) {
         object->destroy();
+        m_object_map.erase(id);
     }
 }
 

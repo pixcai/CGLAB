@@ -9,7 +9,6 @@
 #include <tracy/Tracy.hpp>
 
 #include "core/camera.h"
-#include "core/geometry_helper.h"
 #include "core/material.h"
 #include "core/renderer.h"
 #include "core/resource_manager.h"
@@ -26,10 +25,10 @@ static EditorContext g_editor_context;
 
 EditorContext& EditorContext::instance() noexcept { return g_editor_context; }
 
-static Camera g_camera;
-static Transform g_transform;
+static Camera* g_camera;
+static Transform* g_transform;
 
-static Light g_light;
+static Light* g_light;
 static glm::vec4 light_color;
 static glm::vec4 light_direction;
 
@@ -47,30 +46,21 @@ Editor::Editor(GLFWwindow* window) {
     g_editor_context.renderer = renderer;
     g_editor_context.scene = scene;
 
-    auto object = scene->createObject();
-    auto mesh_renderer = object.add<MeshRenderer>();
-    mesh_renderer->mesh_handle = GeometryHelper::buildCube();
-    mesh_renderer->material_handle = ResourceManager::instance().make<Material>();
-    cube_material = mesh_renderer->material_handle.get();
-    scene->addObject(object);
-
-    g_light.init();
-
-    g_transform.position = glm::vec3(4.0f, 8.0f, 8.0f);
-    g_transform.lookAt(g_camera.target);
-    g_transform.updateLocalMatrix();
-
-    auto offset = g_transform.position - g_camera.target;
-    g_camera.yaw = std::atan2(offset.x, offset.z);
-    g_camera.pitch = std::asin(offset.y / glm::length(offset));
-    g_camera.updateViewMatrix(g_transform.local_matrix);
-
+    auto cube = scene->factory.createCube();
+    cube_material = cube.get<MeshRenderer>()->material_handle.get();
     cube_color = cube_material->get<glm::vec4>("base_color");
     metallic = cube_material->get<float>("metallic");
     roughness = cube_material->get<float>("roughness");
+    scene->addObject(cube);
 
-    light_color = g_light.get<glm::vec4>("color");
-    light_direction = g_light.get<glm::vec4>("direction");
+    auto camera_object = scene->factory.createCamera(glm::vec3(4.0f, 8.0f, 8.0f));
+    g_camera = camera_object.get<Camera>();
+    g_transform = camera_object.get<Transform>();
+
+    auto light_object = scene->factory.createDirectionalLight();
+    g_light = light_object.get<Light>();
+    light_color = g_light->property.color;
+    light_direction = g_light->property.direction;
 }
 
 Editor::~Editor() {
@@ -88,9 +78,9 @@ void Editor::render() {
     auto render_items = scene->collectRenderItems();
     {
         ZoneScopedN("Render");
-        UBOPool::instance().updateLight(g_light);
+        UBOPool::instance().updateLight(*g_light);
         renderer->setClearColor(scene->clear_color);
-        renderer->render(render_items, g_camera, g_transform);
+        renderer->render(render_items, *g_camera, *g_transform);
         ResourceManager::instance().flushDestroyQueue();
     }
 
@@ -186,35 +176,35 @@ void Editor::renderWorkspace() {
 #if defined(__APPLE__)
         if (io.MouseWheelH != 0.0f || io.MouseWheel != 0.0f) {
             glm::vec3 offset;
-            float distance = glm::distance(g_transform.position, g_camera.target);
-            g_camera.yaw -= io.MouseWheelH * 0.01f;
-            g_camera.pitch += io.MouseWheel * 0.01f;
-            offset.x = distance * std::cos(g_camera.pitch) * std::sin(g_camera.yaw);
-            offset.y = distance * std::sin(g_camera.pitch);
-            offset.z = distance * std::cos(g_camera.pitch) * std::cos(g_camera.yaw);
-            g_transform.position = g_camera.target + offset;
-            g_transform.lookAt(g_camera.target);
-            g_transform.updateLocalMatrix();
-            g_camera.updateViewMatrix(g_transform.local_matrix);
+            float distance = glm::distance(g_transform->position, g_camera->target);
+            g_camera->yaw -= io.MouseWheelH * 0.02f;
+            g_camera->pitch += io.MouseWheel * 0.02f;
+            offset.x = distance * std::cos(g_camera->pitch) * std::sin(g_camera->yaw);
+            offset.y = distance * std::sin(g_camera->pitch);
+            offset.z = distance * std::cos(g_camera->pitch) * std::cos(g_camera->yaw);
+            g_transform->position = g_camera->target + offset;
+            g_transform->lookAt(g_camera->target);
+            g_transform->updateLocalMatrix();
+            g_camera->updateViewMatrix(g_transform->local_matrix);
         }
 #else
         if (ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
             glm::vec3 offset;
-            float distance = glm::distance(g_transform.position, g_camera.target);
-            g_camera.yaw -= io.MouseDelta.x * 0.005f;
-            g_camera.pitch += io.MouseDelta.y * 0.005f;
-            offset.x = distance * std::cos(g_camera.pitch) * std::sin(g_camera.yaw);
-            offset.y = distance * std::sin(g_camera.pitch);
-            offset.z = distance * std::cos(g_camera.pitch) * std::cos(g_camera.yaw);
-            g_transform.position = g_camera.target + offset;
-            g_transform.lookAt(g_camera.target);
-            g_transform.updateLocalMatrix();
-            g_camera.updateViewMatrix(g_transform.local_matrix);
+            float distance = glm::distance(g_transform.position, g_camera->target);
+            g_camera->yaw -= io.MouseDelta.x * 0.005f;
+            g_camera->pitch += io.MouseDelta.y * 0.005f;
+            offset.x = distance * std::cos(g_camera->pitch) * std::sin(g_camera->yaw);
+            offset.y = distance * std::sin(g_camera->pitch);
+            offset.z = distance * std::cos(g_camera->pitch) * std::cos(g_camera->yaw);
+            g_transform->position = g_camera->target + offset;
+            g_transform->lookAt(g_camera->target);
+            g_transform->updateLocalMatrix();
+            g_camera->updateViewMatrix(g_transform->local_matrix);
         }
         if (io.MouseWheel != 0.0f) {
-            g_transform.position += g_transform.forward() * io.MouseWheel * 0.5f;
-            g_transform.updateLocalMatrix();
-            g_camera.updateViewMatrix(g_transform.local_matrix);
+            g_transform->position += g_transform->forward() * io.MouseWheel * 0.5f;
+            g_transform->updateLocalMatrix();
+            g_camera->updateViewMatrix(g_transform->local_matrix);
         }
 #endif
     }
@@ -257,13 +247,15 @@ void Editor::renderProperties() {
     }
     if (ImGui::CollapsingHeader("Light")) {
         if (ImGui::ColorEdit4("Light color", glm::value_ptr(light_color))) {
-            g_light.set("color", light_color);
-            UBOPool::instance().updateLight(g_light);
+            g_light->property.color = light_color;
+            g_light->dirty = true;
+            UBOPool::instance().updateLight(*g_light);
         }
-        if (ImGui::DragFloat4("Light direction", glm::value_ptr(light_direction), 0.01f, 0.0f,
+        if (ImGui::DragFloat4("Light direction", glm::value_ptr(light_direction), 0.01f, -1.0f,
                               1.0f)) {
-            g_light.set("direction", light_direction);
-            UBOPool::instance().updateLight(g_light);
+            g_light->property.direction = light_direction;
+            g_light->dirty = true;
+            UBOPool::instance().updateLight(*g_light);
         }
     }
     ImGui::End();

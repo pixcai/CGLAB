@@ -30,7 +30,7 @@ struct Material : IResource {
 
         auto& field = shader_block->uniform_map.at(fullname);
         std::memcpy(m_storage.data() + field.offset, &value, field.array_size * field.size);
-        m_dirty = true;
+        dirty = true;
     }
 
     template <typename ValueType>
@@ -44,11 +44,11 @@ struct Material : IResource {
 
 public:
     GLuint index{0};
+    bool dirty{true};
     std::uint64_t shader_key;
     ShaderBlock* shader_block{nullptr};
 
 private:
-    mutable bool m_dirty{false};
     std::vector<std::byte> m_storage;
 
     friend class UBOPool;
